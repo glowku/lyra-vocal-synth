@@ -1,343 +1,746 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lyra — Physical Modeling Musical TTS</title>
-  <meta name="description" content="Lyra is a next-generation physical-modeling vocal synthesizer and musical TTS. Every sound comes from a simulated airway." />
+  <title>Lyra — Physical Modeling Vocal Instrument</title>
+  <meta name="description" content="Lyra — interactive physical-modeling musical TTS preview. Drag articulators, play vowels, control pitch and pressure." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #07070b;
-      --surface: #0f0f16;
-      --border: #1c1c28;
-      --text: #e8e6f0;
-      --muted: #8b8799;
+      --bg: #06060a;
+      --surface: #0e0e15;
+      --surface2: #14141e;
+      --border: #1f1f2e;
+      --text: #eceaf4;
+      --muted: #8a869a;
       --accent: #a78bfa;
       --accent2: #67e8f9;
-      --glow: rgba(167, 139, 250, 0.35);
+      --green: #4ade80;
+      --glow: rgba(167,139,250,0.4);
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
       min-height: 100vh;
       overflow-x: hidden;
     }
-
     .noise {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.04;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      z-index: 100;
+      position: fixed; inset: 0; pointer-events: none; opacity: 0.035; z-index: 999;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
-    header {
-      position: relative;
-      padding: 6rem 1.5rem 4rem;
-      text-align: center;
-      overflow: hidden;
+    /* Top bar */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6,6,10,0.85);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 50;
     }
-
-    .orb {
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
-      top: -200px;
-      left: 50%;
-      transform: translateX(-50%);
-      filter: blur(40px);
-      z-index: 0;
+    .brand {
+      display: flex; align-items: center; gap: 0.75rem;
+      font-weight: 600; letter-spacing: 0.08em; font-size: 0.95rem;
     }
-
-    .logo {
-      position: relative;
-      z-index: 1;
-      font-size: 0.85rem;
-      letter-spacing: 0.35em;
-      text-transform: uppercase;
-      color: var(--accent);
-      font-weight: 500;
-      margin-bottom: 1.5rem;
+    .brand span { color: var(--accent); }
+    .status-pill {
+      display: flex; align-items: center; gap: 0.45rem;
+      font-size: 0.75rem; color: var(--accent2);
+      background: rgba(103,232,249,0.08);
+      border: 1px solid rgba(103,232,249,0.25);
+      padding: 0.3rem 0.7rem; border-radius: 999px;
     }
-
-    h1 {
-      position: relative;
-      z-index: 1;
-      font-size: clamp(2.8rem, 8vw, 5.2rem);
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      line-height: 1.05;
-      background: linear-gradient(135deg, #fff 20%, var(--accent) 50%, var(--accent2) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 1.25rem;
-    }
-
-    .tagline {
-      position: relative;
-      z-index: 1;
-      font-size: 1.25rem;
-      color: var(--muted);
-      max-width: 540px;
-      margin: 0 auto 2.5rem;
-      font-weight: 400;
-    }
-
-    .cta {
-      position: relative;
-      z-index: 1;
-      display: inline-flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.85rem 1.6rem;
-      border-radius: 999px;
-      font-weight: 500;
-      font-size: 0.95rem;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #7c3aed);
-      color: white;
-      box-shadow: 0 0 30px var(--glow);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 45px var(--glow);
-    }
-
-    .btn-ghost {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-ghost:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    main {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 1.5rem 6rem;
-    }
-
-    .section {
-      margin-bottom: 5rem;
-    }
-
-    .section h2 {
-      font-size: 1.75rem;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.02em;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.75rem;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-
-    .card:hover {
-      border-color: #2a2a3d;
-      transform: translateY(-3px);
-    }
-
-    .card h3 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 0.6rem;
-      color: var(--accent2);
-    }
-
-    .card p {
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .quote {
-      font-size: 1.35rem;
-      font-weight: 400;
-      color: var(--text);
-      border-left: 3px solid var(--accent);
-      padding-left: 1.5rem;
-      margin: 2rem 0;
-      max-width: 700px;
-    }
-
-    footer {
-      text-align: center;
-      padding: 3rem 1.5rem;
-      color: var(--muted);
-      font-size: 0.9rem;
-      border-top: 1px solid var(--border);
-    }
-
-    footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85em;
-      background: #16161f;
-      padding: 0.15em 0.4em;
-      border-radius: 4px;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.8rem;
-      color: var(--accent2);
-      margin-bottom: 1rem;
-    }
-
-    .status::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent2);
-      box-shadow: 0 0 8px var(--accent2);
+    .status-pill::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent2); box-shadow: 0 0 8px var(--accent2);
       animation: pulse 2s infinite;
     }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+    .top-actions { display: flex; gap: 0.6rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.55rem 1.1rem; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); text-decoration: none; transition: all 0.15s;
     }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-primary {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      border: none; color: white;
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 28px var(--glow); }
+
+    /* Main layout */
+    .app {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 0;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 56px);
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+    }
+
+    /* Left – Instrument */
+    .instrument {
+      padding: 1.5rem;
+      display: flex; flex-direction: column; gap: 1.25rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem;
+    }
+    .panel-title {
+      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.9rem; font-weight: 500;
+    }
+
+    /* Anatomy cutaway */
+    .anatomy {
+      position: relative;
+      height: 280px;
+      background: linear-gradient(180deg, #0c0c14 0%, #12121c 100%);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .anatomy canvas { width: 100%; height: 100%; display: block; }
+    .anatomy-label {
+      position: absolute; bottom: 10px; left: 12px;
+      font-size: 0.7rem; color: var(--muted);
+    }
+
+    /* Controls row */
+    .controls-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+    }
+    @media (max-width: 700px) { .controls-row { grid-template-columns: 1fr 1fr; } }
+
+    .ctrl {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem;
+      text-align: center;
+    }
+    .ctrl label {
+      display: block; font-size: 0.65rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem;
+    }
+    .ctrl .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.15rem; font-weight: 500; color: var(--accent2);
+      margin-bottom: 0.5rem;
+    }
+    .ctrl input[type=range] {
+      width: 100%; accent-color: var(--accent); cursor: pointer;
+    }
+
+    /* Vowel pad */
+    .vowel-pad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+    }
+    .vowel-btn {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1.3rem; font-weight: 600;
+      cursor: pointer; transition: all 0.12s;
+      font-family: 'Inter', sans-serif;
+    }
+    .vowel-btn:hover, .vowel-btn.active {
+      background: rgba(167,139,250,0.2);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 16px var(--glow);
+    }
+
+    /* Spectrum */
+    .spectrum-wrap {
+      height: 90px;
+      background: #0a0a10;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .spectrum-wrap canvas { width: 100%; height: 100%; display: block; }
+
+    /* Keyboard */
+    .keys {
+      display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;
+    }
+    .key {
+      width: 42px; height: 90px;
+      border-radius: 0 0 6px 6px;
+      background: linear-gradient(180deg, #1a1a26, #12121a);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.7rem;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 8px;
+      cursor: pointer; user-select: none;
+      transition: all 0.08s;
+    }
+    .key:hover, .key.active {
+      background: linear-gradient(180deg, #2a1f4a, #1a1230);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 12px var(--glow);
+    }
+
+    /* Right sidebar */
+    .sidebar {
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1.25rem;
+      display: flex; flex-direction: column; gap: 1.1rem;
+    }
+    @media (max-width: 900px) {
+      .sidebar { border-left: none; border-top: 1px solid var(--border); }
+    }
+
+    .mode-tabs {
+      display: flex; gap: 0.35rem;
+      background: var(--bg);
+      padding: 0.3rem; border-radius: 10px;
+    }
+    .mode-tab {
+      flex: 1; text-align: center;
+      padding: 0.5rem 0.3rem;
+      font-size: 0.75rem; font-weight: 500;
+      border-radius: 7px; cursor: pointer;
+      color: var(--muted); border: none; background: transparent;
+      transition: all 0.15s;
+    }
+    .mode-tab.active {
+      background: var(--surface2);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .body-select {
+      display: flex; gap: 0.4rem;
+    }
+    .body-btn {
+      flex: 1; padding: 0.55rem;
+      font-size: 0.8rem; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .body-btn.active {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(167,139,250,0.12);
+    }
+
+    .info-block {
+      font-size: 0.8rem; color: var(--muted); line-height: 1.55;
+    }
+    .info-block strong { color: var(--text); }
+
+    .start-audio {
+      width: 100%; padding: 0.9rem;
+      font-size: 0.95rem; font-weight: 600;
+      border-radius: 10px; border: none;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      color: white; cursor: pointer;
+      box-shadow: 0 0 24px var(--glow);
+      transition: all 0.15s;
+    }
+    .start-audio:hover { transform: translateY(-1px); box-shadow: 0 0 32px var(--glow); }
+    .start-audio.running {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      box-shadow: 0 0 20px rgba(74,222,128,0.35);
+    }
+
+    footer.mini {
+      text-align: center; padding: 1rem;
+      font-size: 0.75rem; color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    footer.mini a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="noise"></div>
 
-  <header>
-    <div class="orb"></div>
-    <div class="logo">LYRA VOCAL SYNTH</div>
-    <h1>Voice from physics</h1>
-    <p class="tagline">
-      A complete, interactive, musical TTS built on a real-time physical model of the airway.
-      No samples. Pure simulation.
-    </p>
-    <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/glowku/lyra-vocal-synth">View on GitHub</a>
-      <a class="btn btn-ghost" href="https://github.com/glowku/lyra-vocal-synth#roadmap">Roadmap</a>
+  <div class="topbar">
+    <div class="brand">LYRA <span>VOCAL</span></div>
+    <div class="status-pill">Phase 0 · Preview UI</div>
+    <div class="top-actions">
+      <a class="btn" href="https://github.com/glowku/lyra-vocal-synth" target="_blank">GitHub</a>
+      <a class="btn btn-primary" href="https://github.com/glowku/lyra-vocal-synth#how-to-test--use-from-github-right-now" target="_blank">Install & Test</a>
     </div>
-  </header>
+  </div>
 
-  <main>
-    <section class="section">
-      <div class="status">Phase 0 — Foundation in progress</div>
-      <h2>What Lyra is</h2>
-      <p class="quote">
-        Every sound is born from a simulated airway — lungs, vocal folds or syrinx,
-        branched vocal tract, lips and nose. The same engine that runs in the browser
-        also powers offline rendering and future studio tools.
-      </p>
-    </section>
+  <div class="app">
+    <!-- LEFT: Instrument -->
+    <div class="instrument">
 
-    <section class="section">
-      <h2>Capabilities</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Realistic TTS</h3>
-          <p>High-quality G2P, coarticulation and prosody. English first, multi-language later.</p>
-        </div>
-        <div class="card">
-          <h3>Musical Singing</h3>
-          <p>Piano-roll, lyrics per note, expressive timing, vibrato and dynamics.</p>
-        </div>
-        <div class="card">
-          <h3>Interactive Play</h3>
-          <p>Drag tongue, lips and jaw on a live anatomical model. Real-time formants.</p>
-        </div>
-        <div class="card">
-          <h3>Beatbox & Gestures</h3>
-          <p>Every percussion sound is an articulatory gesture — clicks, ejectives, bursts.</p>
-        </div>
-        <div class="card">
-          <h3>Bestiary</h3>
-          <p>Human continuous morph + songbird, mammals and more exotic models.</p>
-        </div>
-        <div class="card">
-          <h3>Studio Power</h3>
-          <p>MIDI, multi-voice, spectrum, formant tracking, WAV export, future plugins.</p>
+      <div class="panel">
+        <div class="panel-title">Vocal tract · Midsagittal (live)</div>
+        <div class="anatomy">
+          <canvas id="anatomy"></canvas>
+          <div class="anatomy-label">Drag tongue / jaw · Preview only (real FDTD coming)</div>
         </div>
       </div>
-    </section>
 
-    <section class="section">
-      <h2>Why physical modeling?</h2>
-      <p style="color: var(--muted); max-width: 680px;">
-        Concatenative and neural systems stitch or statistically generate speech.
-        Lyra computes how air moves through a changing tube. This gives continuous,
-        controllable, explorable timbres — and makes non-human and impossible voices
-        first-class citizens of the instrument.
-      </p>
-    </section>
-
-    <section class="section">
-      <h2>Tech</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Rust core</h3>
-          <p>Single high-performance engine for browser (WASM + AudioWorklet) and native CLI.</p>
+      <div class="controls-row">
+        <div class="ctrl">
+          <label>Pitch</label>
+          <div class="value" id="pitchVal">220 Hz</div>
+          <input type="range" id="pitch" min="80" max="600" value="220" step="1">
         </div>
-        <div class="card">
-          <h3>FDTD airway</h3>
-          <p>Branched staggered-grid transmission line with losses, pressure and moving walls.</p>
+        <div class="ctrl">
+          <label>Pressure</label>
+          <div class="value" id="pressureVal">8.0 cmH₂O</div>
+          <input type="range" id="pressure" min="1" max="20" value="8" step="0.1">
         </div>
-        <div class="card">
-          <h3>Modern web UI</h3>
-          <p>Cinematic dark design, 3D head, live anatomy, piano roll and spectrum views.</p>
+        <div class="ctrl">
+          <label>Pressed</label>
+          <div class="value" id="pressedVal">50 %</div>
+          <input type="range" id="pressed" min="0" max="100" value="50">
+        </div>
+        <div class="ctrl">
+          <label>Vibrato</label>
+          <div class="value" id="vibratoVal">0 ¢</div>
+          <input type="range" id="vibrato" min="0" max="80" value="0">
         </div>
       </div>
-    </section>
-  </main>
 
-  <footer>
-    <p>
-      Lyra is open source under the MIT license.<br />
-      Inspired by the outstanding work of
-      <a href="https://github.com/jamesondh/chimera-vocal-synth" target="_blank">Chimera Vocal Synth</a>.
-    </p>
-    <p style="margin-top: 1rem;">
-      <a href="https://github.com/glowku/lyra-vocal-synth">github.com/glowku/lyra-vocal-synth</a>
-    </p>
+      <div class="panel">
+        <div class="panel-title">Vowels · Click to play</div>
+        <div class="vowel-pad" id="vowelPad">
+          <button class="vowel-btn" data-v="a">ɑ</button>
+          <button class="vowel-btn" data-v="e">ɛ</button>
+          <button class="vowel-btn" data-v="i">i</button>
+          <button class="vowel-btn" data-v="o">ɔ</button>
+          <button class="vowel-btn" data-v="u">u</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Spectrum (preview)</div>
+        <div class="spectrum-wrap">
+          <canvas id="spectrum"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Keyboard · A–L or click</div>
+        <div class="keys" id="keys"></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <div class="sidebar">
+      <button class="start-audio" id="startBtn">Start Audio Engine</button>
+
+      <div>
+        <div class="panel-title">Mode</div>
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="play">Play</button>
+          <button class="mode-tab" data-mode="speak">Speak</button>
+          <button class="mode-tab" data-mode="sing">Sing</button>
+          <button class="mode-tab" data-mode="beat">Beat</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-title">Body</div>
+        <div class="body-select">
+          <button class="body-btn" data-body="male">Male</button>
+          <button class="body-btn active" data-body="female">Female</button>
+          <button class="body-btn" data-body="child">Child</button>
+        </div>
+      </div>
+
+      <div class="panel" style="padding:1rem">
+        <div class="panel-title">What you hear</div>
+        <div class="info-block">
+          This is a <strong>preview interface</strong>.  
+          The real engine (Rust FDTD + glottis) is still in Phase 0.  
+          Right now you hear a simple formant oscillator that reacts to the same controls the final instrument will use.
+        </div>
+      </div>
+
+      <div class="panel" style="padding:1rem">
+        <div class="panel-title">How to test the real code</div>
+        <div class="info-block">
+          <code>git clone …</code><br>
+          <code>cargo run -p lyra-cli -- info</code><br>
+          <code>cargo test --workspace</code><br><br>
+          Full instructions → README on GitHub.
+        </div>
+      </div>
+
+      <div class="panel" style="padding:1rem; flex:1">
+        <div class="panel-title">Vision</div>
+        <div class="info-block">
+          Same philosophy as Chimera: every sound comes from a simulated airway.  
+          Goal = complete musical TTS + interactive instrument with singing, beatbox, bestiary and studio features.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mini">
+    Lyra · MIT · Inspired by <a href="https://github.com/jamesondh/chimera-vocal-synth" target="_blank">Chimera Vocal Synth</a> by Jameson Hodge
   </footer>
+
+<script>
+/* ========= Simple interactive formant preview ========= */
+const state = {
+  audioCtx: null,
+  osc: null,
+  gain: null,
+  formantFilters: [],
+  running: false,
+  pitch: 220,
+  pressure: 8,
+  pressed: 0.5,
+  vibrato: 0,
+  vowel: 'a',
+  body: 'female',
+  tongueY: 0.45,
+  jawOpen: 0.4,
+};
+
+// Approximate formant targets (Hz) for 5 vowels
+const FORMANTS = {
+  a: [700, 1200, 2600],
+  e: [500, 1900, 2500],
+  i: [300, 2300, 3000],
+  o: [500, 900, 2400],
+  u: [350, 700, 2200],
+};
+
+function startAudio() {
+  if (state.running) return;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  state.audioCtx = ctx;
+
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.value = state.pitch;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.0001;
+
+  // 3 formant bandpass filters in series-ish (parallel mix)
+  const filters = [];
+  for (let i = 0; i < 3; i++) {
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = 8;
+    filters.push(f);
+  }
+  state.formantFilters = filters;
+
+  // Mix formants
+  const merger = ctx.createGain();
+  merger.gain.value = 0.35;
+
+  osc.connect(filters[0]);
+  filters[0].connect(merger);
+  osc.connect(filters[1]);
+  filters[1].connect(merger);
+  osc.connect(filters[2]);
+  filters[2].connect(merger);
+
+  merger.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start();
+  state.osc = osc;
+  state.gain = gain;
+  state.running = true;
+
+  applyVowel(state.vowel);
+  updateGain();
+
+  document.getElementById('startBtn').textContent = 'Engine Running';
+  document.getElementById('startBtn').classList.add('running');
+
+  // Vibrato LFO
+  setInterval(() => {
+    if (!state.running || !state.osc) return;
+    const vib = state.vibrato / 100 * 8; // cents → Hz approx
+    const t = ctx.currentTime;
+    const mod = Math.sin(t * 5.5) * vib;
+    state.osc.frequency.setTargetAtTime(state.pitch + mod, t, 0.02);
+  }, 30);
+
+  requestAnimationFrame(drawSpectrum);
+}
+
+function applyVowel(v) {
+  state.vowel = v;
+  const f = FORMANTS[v] || FORMANTS.a;
+  state.formantFilters.forEach((filt, i) => {
+    if (filt) filt.frequency.setTargetAtTime(f[i], state.audioCtx?.currentTime || 0, 0.05);
+  });
+  document.querySelectorAll('.vowel-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.v === v);
+  });
+}
+
+function updateGain() {
+  if (!state.gain) return;
+  // pressure + pressed influence amplitude
+  const amp = Math.min(0.18, (state.pressure / 20) * 0.22 * (0.4 + state.pressed * 0.6));
+  state.gain.gain.setTargetAtTime(amp, state.audioCtx.currentTime, 0.08);
+}
+
+function setPitch(hz) {
+  state.pitch = hz;
+  document.getElementById('pitchVal').textContent = Math.round(hz) + ' Hz';
+  if (state.osc) state.osc.frequency.setTargetAtTime(hz, state.audioCtx.currentTime, 0.03);
+}
+
+/* UI bindings */
+document.getElementById('startBtn').addEventListener('click', startAudio);
+
+document.getElementById('pitch').addEventListener('input', e => {
+  setPitch(+e.target.value);
+});
+document.getElementById('pressure').addEventListener('input', e => {
+  state.pressure = +e.target.value;
+  document.getElementById('pressureVal').textContent = state.pressure.toFixed(1) + ' cmH₂O';
+  updateGain();
+});
+document.getElementById('pressed').addEventListener('input', e => {
+  state.pressed = +e.target.value / 100;
+  document.getElementById('pressedVal').textContent = e.target.value + ' %';
+  updateGain();
+});
+document.getElementById('vibrato').addEventListener('input', e => {
+  state.vibrato = +e.target.value;
+  document.getElementById('vibratoVal').textContent = e.target.value + ' ¢';
+});
+
+document.getElementById('vowelPad').addEventListener('click', e => {
+  const btn = e.target.closest('.vowel-btn');
+  if (!btn) return;
+  if (!state.running) startAudio();
+  applyVowel(btn.dataset.v);
+});
+
+/* Body buttons */
+document.querySelectorAll('.body-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.body-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.body = b.dataset.body;
+    // rough pitch shift by body
+    const base = state.body === 'male' ? 120 : state.body === 'child' ? 280 : 220;
+    document.getElementById('pitch').value = base;
+    setPitch(base);
+  });
+});
+
+/* Mode tabs (visual only for now) */
+document.querySelectorAll('.mode-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+
+/* Simple keyboard */
+const noteNames = ['C','D','E','F','G','A','B','C'];
+const keyMap = { a:0, s:1, d:2, f:3, g:4, h:5, j:6, k:7 };
+const keysEl = document.getElementById('keys');
+noteNames.forEach((n, i) => {
+  const k = document.createElement('div');
+  k.className = 'key';
+  k.textContent = n;
+  k.dataset.i = i;
+  k.addEventListener('mousedown', () => playKey(i, k));
+  k.addEventListener('mouseup', () => k.classList.remove('active'));
+  k.addEventListener('mouseleave', () => k.classList.remove('active'));
+  keysEl.appendChild(k);
+});
+
+function playKey(i, el) {
+  if (!state.running) startAudio();
+  el.classList.add('active');
+  const base = state.pitch;
+  const ratio = Math.pow(2, i / 12);
+  setPitch(base * ratio * 0.7); // relative
+}
+
+window.addEventListener('keydown', e => {
+  const i = keyMap[e.key.toLowerCase()];
+  if (i === undefined) return;
+  const el = keysEl.children[i];
+  if (el) playKey(i, el);
+});
+window.addEventListener('keyup', e => {
+  const i = keyMap[e.key.toLowerCase()];
+  if (i !== undefined && keysEl.children[i]) keysEl.children[i].classList.remove('active');
+});
+
+/* Anatomy canvas – simple interactive cutaway */
+const anat = document.getElementById('anatomy');
+const actx = anat.getContext('2d');
+function resizeAnat() {
+  anat.width = anat.clientWidth * devicePixelRatio;
+  anat.height = anat.clientHeight * devicePixelRatio;
+  actx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+resizeAnat();
+window.addEventListener('resize', resizeAnat);
+
+let dragging = false;
+anat.addEventListener('pointerdown', e => { dragging = true; moveTongue(e); });
+anat.addEventListener('pointerup', () => dragging = false);
+anat.addEventListener('pointerleave', () => dragging = false);
+anat.addEventListener('pointermove', e => { if (dragging) moveTongue(e); });
+
+function moveTongue(e) {
+  const rect = anat.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+  state.tongueY = Math.max(0.15, Math.min(0.75, y));
+  state.jawOpen = Math.max(0.15, Math.min(0.7, 0.3 + (0.5 - y) * 0.5));
+  // rough formant shift from tongue height
+  if (state.running) {
+    const f1 = 300 + state.tongueY * 500;
+    const f2 = 800 + (1 - state.tongueY) * 1800;
+    if (state.formantFilters[0]) state.formantFilters[0].frequency.setTargetAtTime(f1, state.audioCtx.currentTime, 0.04);
+    if (state.formantFilters[1]) state.formantFilters[1].frequency.setTargetAtTime(f2, state.audioCtx.currentTime, 0.04);
+  }
+}
+
+function drawAnatomy() {
+  const w = anat.clientWidth, h = anat.clientHeight;
+  actx.clearRect(0, 0, w, h);
+
+  // background grid
+  actx.strokeStyle = 'rgba(255,255,255,0.03)';
+  actx.lineWidth = 1;
+  for (let x = 0; x < w; x += 20) { actx.beginPath(); actx.moveTo(x,0); actx.lineTo(x,h); actx.stroke(); }
+  for (let y = 0; y < h; y += 20) { actx.beginPath(); actx.moveTo(0,y); actx.lineTo(w,y); actx.stroke(); }
+
+  // head outline (simplified sagittal)
+  actx.strokeStyle = 'rgba(167,139,250,0.45)';
+  actx.lineWidth = 2;
+  actx.beginPath();
+  actx.ellipse(w*0.55, h*0.42, w*0.32, h*0.38, 0, 0, Math.PI*2);
+  actx.stroke();
+
+  // oral cavity
+  actx.fillStyle = 'rgba(103,232,249,0.08)';
+  actx.beginPath();
+  actx.moveTo(w*0.25, h*0.55);
+  actx.quadraticCurveTo(w*0.45, h*(0.35 + state.jawOpen*0.25), w*0.7, h*0.5);
+  actx.quadraticCurveTo(w*0.55, h*0.7, w*0.3, h*0.65);
+  actx.closePath();
+  actx.fill();
+  actx.strokeStyle = 'rgba(103,232,249,0.35)';
+  actx.stroke();
+
+  // tongue
+  const ty = h * state.tongueY;
+  actx.fillStyle = 'rgba(167,139,250,0.55)';
+  actx.beginPath();
+  actx.ellipse(w*0.48, ty, w*0.14, h*0.09, -0.3, 0, Math.PI*2);
+  actx.fill();
+
+  // lips
+  actx.strokeStyle = 'rgba(250,180,200,0.6)';
+  actx.lineWidth = 3;
+  actx.beginPath();
+  actx.moveTo(w*0.72, h*0.48);
+  actx.quadraticCurveTo(w*0.78, h*(0.48 - state.jawOpen*0.08), w*0.82, h*0.5);
+  actx.stroke();
+
+  // glottis marker
+  actx.fillStyle = 'rgba(74,222,128,0.7)';
+  actx.beginPath();
+  actx.arc(w*0.28, h*0.62, 5, 0, Math.PI*2);
+  actx.fill();
+
+  // airflow particles
+  const t = performance.now() / 1000;
+  for (let i = 0; i < 8; i++) {
+    const px = w*0.28 + ((t*40 + i*18) % (w*0.5));
+    const py = h*0.58 + Math.sin(t*3 + i)*8;
+    actx.fillStyle = `rgba(103,232,249,${0.4 - i*0.04})`;
+    actx.beginPath();
+    actx.arc(px, py, 2, 0, Math.PI*2);
+    actx.fill();
+  }
+
+  requestAnimationFrame(drawAnatomy);
+}
+drawAnatomy();
+
+/* Spectrum visualizer */
+const spec = document.getElementById('spectrum');
+const sctx = spec.getContext('2d');
+function resizeSpec() {
+  spec.width = spec.clientWidth * devicePixelRatio;
+  spec.height = spec.clientHeight * devicePixelRatio;
+  sctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+resizeSpec();
+window.addEventListener('resize', resizeSpec);
+
+function drawSpectrum() {
+  const w = spec.clientWidth, h = spec.clientHeight;
+  sctx.fillStyle = '#0a0a10';
+  sctx.fillRect(0, 0, w, h);
+
+  if (state.running && state.formantFilters.length) {
+    // fake spectrum based on formants + pitch
+    for (let x = 0; x < w; x++) {
+      const freq = (x / w) * 4000;
+      let amp = 0;
+      // harmonic series of pitch
+      for (let n = 1; n < 12; n++) {
+        const harm = state.pitch * n;
+        amp += Math.exp(-Math.pow((freq - harm)/40, 2)) * (1/n) * 0.6;
+      }
+      // formant peaks
+      state.formantFilters.forEach((f, i) => {
+        const ff = f.frequency.value;
+        amp += Math.exp(-Math.pow((freq - ff)/(80 + i*30), 2)) * (0.9 - i*0.2);
+      });
+      const y = h - amp * h * 0.85 * (state.pressure/12);
+      sctx.fillStyle = `rgba(167,139,250,${Math.min(0.9, amp)})`;
+      sctx.fillRect(x, y, 1, h - y);
+    }
+  } else {
+    sctx.fillStyle = 'rgba(255,255,255,0.04)';
+    sctx.font = '12px Inter';
+    sctx.fillText('Start engine to see spectrum', 16, h/2 + 4);
+  }
+  requestAnimationFrame(drawSpectrum);
+}
+
+// default vowel highlight
+applyVowel('a');
+</script>
 </body>
 </html>
