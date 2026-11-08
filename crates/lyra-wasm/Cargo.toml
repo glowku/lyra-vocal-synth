@@ -1,0 +1,14 @@
+[package]
+name = "lyra-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "WebAssembly bindings for the Lyra engine (AudioWorklet)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+lyra = { workspace = true }
+# wasm-bindgen will be added when we wire the AudioWorklet
