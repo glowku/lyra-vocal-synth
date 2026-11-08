@@ -1,0 +1,17 @@
+/target
+**/target
+Cargo.lock
+.DS_Store
+*.wav
+*.png
+out/
+node_modules/
+dist/
+.web/
+*.rlib
+*.so
+*.dylib
+*.dll
+.env
+.vscode/
+.idea/
