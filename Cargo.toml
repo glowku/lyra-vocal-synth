@@ -1,0 +1,17 @@
+[workspace]
+members = [
+    "crates/lyra",
+    "crates/lyra-cli",
+    "crates/lyra-wasm",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["glowku"]
+repository = "https://github.com/glowku/lyra-vocal-synth"
+
+[workspace.dependencies]
+lyra = { path = "crates/lyra" }
